@@ -7,3 +7,4 @@ nillion-client
 nada-dsl
 python-dotenv==1.0.0
 betterproto==2.0.0b7
+beautifulsoup4
