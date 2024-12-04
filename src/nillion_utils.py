@@ -19,6 +19,7 @@ import hashlib
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, utils
 from src.utils import derive_public_key_from_private
+import streamlit as st
 
 # Nillion ECDSA Configuration
 builtin_tecdsa_program_id = "builtin/tecdsa_sign"
@@ -34,17 +35,28 @@ def setup_nillion_network():
     home = os.getenv("HOME")
     load_dotenv(f"{home}/.config/nillion/nillion-devnet.env")
     
-    network = Network.from_config("devnet")
-    nilchain_key = os.getenv("NILLION_NILCHAIN_PRIVATE_KEY_0")
+    # Check for Nillion network configuration in streamlit secrets
+    if st.secrets.get("nillion_chain_id") and st.secrets.get("nillion_nilvm_bootnode") and st.secrets.get("nillion_nilchain_grpc"):
+        # Use Nillion network testnet configuration from secrets
+        network = Network(
+            chain_id=st.secrets["nillion_chain_id"],
+            nilvm_grpc_endpoint=st.secrets["nillion_nilvm_bootnode"],
+            chain_grpc_endpoint=st.secrets["nillion_nilchain_grpc"]
+        )
+    else:
+        # Fall back to local Nillion devnet configuration (nillion-devnet)
+        network = Network.from_config("devnet")
+    
+    # Get payment key from secrets or nillion-devnet environment
+    nilchain_key = st.secrets.get("nilchain_key") or os.getenv("NILLION_NILCHAIN_PRIVATE_KEY_0")
     if not nilchain_key:
-        raise ValueError("No NILLION_NILCHAIN_PRIVATE_KEY_0 found in environment")
+        raise ValueError("No Nilchain private key for NIL payments found in secrets or environment")
         
     payer = NilChainPayer(
         network,
         wallet_private_key=NilChainPrivateKey(bytes.fromhex(nilchain_key)),
         gas_limit=10000000,
     )
-    
     return network, payer
 
 def user_key_from_seed(seed: str) -> PrivateKey:

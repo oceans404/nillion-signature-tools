@@ -2,10 +2,10 @@
 
 ### Available Tools:
 
-- **ECDSA Key Generator**: Generate new ECDSA key pairs
+- **ECDSA Key Generator**: Generate new ECDSA key pairs locally
 - **Store Key In Nillion**: Store your ECDSA private key in Nillion
 - **Retrieve Key from Nillion**: Retrieve your stored ECDSA private key from Nillion
-- **Sign Message**: Sign messages securely using Nillion's threshold ECDSA via your stored private key
+- **Sign Message with Nillion**: Sign messages securely using Nillion's threshold ECDSA via your stored private key
 - **Verify Signature**: Verify the authenticity of signed messages
 - **Other Tools**: Explore additional dev tools that help generate a Nillion user ID from a seed, derive Ethereum addresses, and derive public keys
 
@@ -15,7 +15,8 @@
 
 - Python 3.8 or higher
 - pip (Python package installer)
-- run `nillion-devnet`
+- `nillion-devnet` for local development
+- a [funded Nilchain private key](https://docs.nillion.com/guide-testnet-faucet) for Testnet development
 
 ### Installation
 
@@ -32,10 +33,29 @@
    pip install -r requirements.txt
    ```
 
-4. Run the Streamlit app:
+### Configuration
 
-   Make sure `nillion-devnet` is alreaedy running. Then start the local streamlit app with
+#### Local Development with nillion-devnet
+
+For local development, simply run `nillion-devnet` and make sure that all .streamlit/sects.toml variables are commented out. Because these aren't present, the app will automatically use your local devnet configuration and payment key.
+
+#### Connecting to Nillion Testnet
+
+To connect to the Nillion testnet:
+
+1. Create a streamlit secrets file:
 
    ```bash
-   streamlit run app.py
+   mkdir -p .streamlit
+   cp .streamlit/secrets.example.toml .streamlit/secrets.toml
    ```
+
+2. Edit `.streamlit/secrets.toml` to add [a valid Nillion Network configuration](https://docs.nillion.com/network-configuration) and a funded Nilchain key
+
+### Running the App
+
+Start the local streamlit app:
+
+```bash
+streamlit run app.py
+```

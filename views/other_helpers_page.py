@@ -8,7 +8,7 @@ def show():
     
     # Tab 1: Get User ID from Seed
     with tab1:
-        st.header("Get Nillion User ID from Seed")
+        st.header("Get Nillion User ID from seed")
         st.text("""
             Get the Nillion user ID that corresponds to a given seed. This is useful for setting up permissions and verifying key storage/retrieval.
         """)
