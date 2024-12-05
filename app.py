@@ -14,7 +14,7 @@ st.markdown("""
 - **[ECDSA Key Generator](/ECDSA_Key_Generator)**: Generate new ECDSA key pairs locally
 - **[Store Key In Nillion](/Store_Key_In_Nillion)**: Store your ECDSA private key in Nillion
 - **[Retrieve Key from Nillion](/Retrieve_Key_from_Nillion)**: Retrieve your stored ECDSA private key from Nillion
-- **[Sign Message with Nillion](/Sign_Message_with_Nillion)**: Sign messages securely using Nillion's threshold ECDSA via your stored private key
+- **[Sign Message with Nillion](/Sign_Message_with_Nillion)**: Sign simple or [SIWE](https://login.xyz/) (EIP-4361) messages securely using Nillion's threshold ECDSA via your stored private key
 - **[Verify Signature](/Verify_Signature)**: Verify the authenticity of signed messages
 - **[Other Tools](/Other_Tools)**: Explore additional dev tools that help generate a Nillion user ID from a seed, derive Ethereum addresses, and derive public keys
 """)
