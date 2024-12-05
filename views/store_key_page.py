@@ -126,6 +126,9 @@ def show():
 
                 st.text("Public Key")
                 st.code(stored_details['public_key'])
+
+                st.text("Ethereum Address")
+                st.code(stored_details['ethereum_address'])
                 
         except Exception as e:
             st.error(f"Error storing key: {str(e)}") 

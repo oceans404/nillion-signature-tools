@@ -2,97 +2,64 @@ import streamlit as st
 from src.nillion_utils import verify_signature
 
 def show():
-    st.text("""
-        Verify an ECDSA signature using the public key. This tool can verify signatures created by Nillion's threshold ECDSA or any other ECDSA implementation that uses the secp256k1 curve.
-    """)
+    st.subheader("Verify signed message")
     
-    # Input type selection
+    # Radio button to choose between message or hash
     input_type = st.radio(
-        "Input Type",
-        ["Original Message", "Message Hash"],
-        help="Choose whether to provide the original message or its SHA-256 hash"
+        "Input type",
+        ["Message Hash", "Full Message"],
+        help="Choose whether to input the original message or its hash"
     )
     
-    if input_type == "Original Message":
+    # Show appropriate input field based on selection
+    if input_type == "Full Message":
         message = st.text_area(
-            "Original Message",
-            help="The exact message that was signed"
+            "Message",
+            help="Enter the original message that was signed"
         )
+        input_value = message
         is_hash = False
     else:
-        message = st.text_input(
-            "Message Hash (hex)",
-            help="The SHA-256 hash of the message (with or without 0x prefix)"
+        hash_value = st.text_input(
+            "Hash",
+            help="Enter the hash that was signed (hex format)"
         )
+        input_value = hash_value
         is_hash = True
     
-    st.subheader("Signature Components")
-    r_component = st.text_input(
-        "r component (hex)",
-        help="The 'r' component of the signature (with or without 0x prefix)"
-    )
-    
-    s_component = st.text_input(
-        "s component (hex)",
-        help="The 's' component of the signature (with or without 0x prefix)"
-    )
-    
+    # Get signature components
+    col1, col2 = st.columns(2)
+    with col1:
+        r = st.text_input("Signature r", help="r component of the signature")
+    with col2:
+        s = st.text_input("Signature s", help="s component of the signature")
+        
     public_key = st.text_input(
-        "Public Key (hex)",
-        help="The uncompressed public key (130 characters starting with '04')"
+        "Public Key",
+        help="The public key of the signer (uncompressed format with 04 prefix)"
     )
     
     if st.button("Verify Signature"):
-        if not all([message, r_component, s_component, public_key]):
-            st.error("All fields are required")
+        if not input_value or not r or not s or not public_key:
+            st.error("Please fill in all required fields")
             return
             
         try:
-            # Clean inputs
-            r_component = r_component.replace('0x', '')
-            s_component = s_component.replace('0x', '')
-            
-            # Verify the signature
             result = verify_signature(
-                message_or_hash=message,
-                signature={
-                    'r': f"0x{r_component}",
-                    's': f"0x{s_component}"
-                },
+                message_or_hash=input_value,
+                signature={'r': r, 's': s},
                 public_key=public_key,
                 is_hash=is_hash
             )
             
             if result['verified']:
-                st.success("✅ Signature verified successfully!")
-                
-                st.subheader("Verification Details")
-                
-                if 'original_message' in result:
-                    st.text("Original Message")
-                    st.code(result['original_message'])
-                
-                st.text("Message Hash (SHA-256)")
-                st.code(result['message'])
-                
-                st.text("Signature Components")
-                st.json(result['signature'])
-                
-                st.text("Public Key")
-                st.code(result['public_key']['hex'])
-                
-                st.info("""
-                    The signature is valid! This proves that
-                    1. The message was signed by someone with compute permission to the private key stored in Nillion
-                    2. The message hasn't been modified since it was signed
-                    3. The signature was created using the corresponding private key
-                """)
+                st.success("✅ Signature is valid!")
             else:
-                st.error("❌ Invalid signature!")
-                if 'error' in result:
-                    st.error(f"Error details: {result['error']}")
-                if 'debug' in result:
-                    st.expander("Debug Information", expanded=False).json(result['debug'])
+                st.error(f"❌ Invalid signature: {result.get('error', 'unknown error')}")
+            
+            # Show debug info in expander
+            with st.expander("Debug Info"):
+                st.json(result)
                 
         except Exception as e:
             st.error(f"Error verifying signature: {str(e)}") 

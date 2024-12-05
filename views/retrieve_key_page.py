@@ -37,10 +37,6 @@ def show():
                 # Show success message
                 st.success("✅ Key retrieved successfully!")
 
-                st.header("Retrieved Key Details")
-                st.subheader("Public Key")
-                st.code(f"0x{retrieved_keys['public_key']}")
-                
                 st.subheader("Private Key")
                 st.text_input(
                     "Private Key",
@@ -48,6 +44,13 @@ def show():
                     type="password",
                     value=f"0x{retrieved_keys['private_key']}"
                 )
+
+                st.header("Retrieved Key Details")
+                st.subheader("Public Key")
+                st.code(f"0x{retrieved_keys['public_key']}")
+                
+                st.subheader("Ethereum Address")
+                st.code(retrieved_keys['ethereum_address'])
                 
                 # Show security reminder
                 st.warning("""
