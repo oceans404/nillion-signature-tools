@@ -30,34 +30,44 @@ tecdsa_key_party = "tecdsa_key_party"
 tecdsa_digest_party = "tecdsa_digest_message_party"
 tecdsa_output_party = "tecdsa_output_party"
 
-def setup_nillion_network():
-    """Setup Nillion network connection and return network and payer"""
-    home = os.getenv("HOME")
-    load_dotenv(f"{home}/.config/nillion/nillion-devnet.env")
-    
-    # Check for Nillion network configuration in streamlit secrets
-    if st.secrets.get("nillion_chain_id") and st.secrets.get("nillion_nilvm_bootnode") and st.secrets.get("nillion_nilchain_grpc"):
-        # Use Nillion network testnet configuration from secrets
-        network = Network(
-            chain_id=st.secrets["nillion_chain_id"],
-            nilvm_grpc_endpoint=st.secrets["nillion_nilvm_bootnode"],
-            chain_grpc_endpoint=st.secrets["nillion_nilchain_grpc"]
-        )
-    else:
-        # Fall back to local Nillion devnet configuration (nillion-devnet)
-        network = Network.from_config("devnet")
-    
-    # Get payment key from secrets or nillion-devnet environment
-    nilchain_key = st.secrets.get("nilchain_key") or os.getenv("NILLION_NILCHAIN_PRIVATE_KEY_0")
-    if not nilchain_key:
-        raise ValueError("No Nilchain private key for NIL payments found in secrets or environment")
+def get_nillion_network():
+    """
+    Get or create a singleton Nillion network instance.
+    Returns tuple of (Network, Payer)
+    """
+    # Check if network already exists in session state
+    if 'nillion_network' not in st.session_state:
+        home = os.getenv("HOME")
+        load_dotenv(f"{home}/.config/nillion/nillion-devnet.env")
         
-    payer = NilChainPayer(
-        network,
-        wallet_private_key=NilChainPrivateKey(bytes.fromhex(nilchain_key)),
-        gas_limit=10000000,
-    )
-    return network, payer
+        # Check for Nillion network configuration in streamlit secrets
+        if st.secrets.get("nillion_chain_id") and st.secrets.get("nillion_nilvm_bootnode") and st.secrets.get("nillion_nilchain_grpc"):
+            # Use Nillion network testnet configuration from secrets
+            network = Network(
+                chain_id=st.secrets["nillion_chain_id"],
+                nilvm_grpc_endpoint=st.secrets["nillion_nilvm_bootnode"],
+                chain_grpc_endpoint=st.secrets["nillion_nilchain_grpc"]
+            )
+        else:
+            # Fall back to local Nillion devnet configuration (nillion-devnet)
+            network = Network.from_config("devnet")
+        
+        # Get payment key from secrets or nillion-devnet environment
+        nilchain_key = st.secrets.get("nilchain_key") or os.getenv("NILLION_NILCHAIN_PRIVATE_KEY_0")
+        if not nilchain_key:
+            raise ValueError("No Nilchain private key for NIL payments found in secrets or environment")
+            
+        payer = NilChainPayer(
+            network,
+            wallet_private_key=NilChainPrivateKey(bytes.fromhex(nilchain_key)),
+            gas_limit=10000000,
+        )
+
+        # Store both network and payer in session state
+        st.session_state.nillion_network = network
+        st.session_state.nillion_payer = payer
+    
+    return st.session_state.nillion_network, st.session_state.nillion_payer
 
 def user_key_from_seed(seed: str) -> PrivateKey:
     """Generate a user key from a given seed using SHA-256."""
@@ -66,7 +76,7 @@ def user_key_from_seed(seed: str) -> PrivateKey:
 
 async def store_ecdsa_key(ecdsa_private_key: str, ttl_days: int = 5, user_key_seed: str = "demo", compute_permissioned_user_ids: list[str] = None, retrieve_permissioned_user_ids: list[str] = None):
     """Store an ECDSA private key in Nillion's secure storage"""
-    network, payer = setup_nillion_network()
+    network, payer = get_nillion_network()
     user_key = user_key_from_seed(user_key_seed)
     client = await VmClient.create(user_key, network, payer)
 
@@ -115,7 +125,7 @@ async def store_ecdsa_key(ecdsa_private_key: str, ttl_days: int = 5, user_key_se
 
 async def retrieve_ecdsa_key(store_id: str | UUID, secret_name: str = builtin_tecdsa_private_key_name, user_key_seed: str = "demo"):
     """Retrieve a secret value from Nillion's secure storage"""
-    network, payer = setup_nillion_network()
+    network, payer = get_nillion_network()
     user_key = user_key_from_seed(user_key_seed)
     client = await VmClient.create(user_key, network, payer)
 
@@ -138,14 +148,14 @@ async def retrieve_ecdsa_key(store_id: str | UUID, secret_name: str = builtin_te
 
 async def get_user_id_from_seed(user_key_seed: str = "demo") -> str:
     """Get the Nillion user ID for a given seed"""
-    network, payer = setup_nillion_network()
+    network, payer = get_nillion_network()
     user_key = user_key_from_seed(user_key_seed)
     client = await VmClient.create(user_key, network, payer)
     return str(client.user_id)
 
 async def sign_message(message: bytes, store_id: str | UUID, user_key_seed: str = "demo") -> dict:
     """Sign a message using a stored ECDSA private key in Nillion"""
-    network, payer = setup_nillion_network()
+    network, payer = get_nillion_network()
     user_key = user_key_from_seed(user_key_seed)
     client = await VmClient.create(user_key, network, payer)
 

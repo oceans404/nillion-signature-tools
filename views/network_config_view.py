@@ -1,11 +1,11 @@
 import streamlit as st
-from src.nillion_utils import setup_nillion_network
+from src.nillion_utils import get_nillion_network
 
 def show():
     """Show Nillion network configuration details"""
     with st.expander("Nillion Network Configuration", expanded=False):
         try:
-            network, payer = setup_nillion_network()
+            network, payer = get_nillion_network()
             st.success(f"✅ Connected to Nillion: {network.chain_id}")
             st.subheader("Nillion Network Details")
             st.json({
