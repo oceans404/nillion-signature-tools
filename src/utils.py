@@ -1,5 +1,16 @@
 from eth_utils import keccak, to_checksum_address
 from cryptography.hazmat.primitives.asymmetric import ec
+from siwe import SiweMessage
+from siwe.siwe import (
+    ExpiredMessage,
+    InvalidSignature,
+    MalformedSession,
+    NotYetValidMessage,
+    DomainMismatch,
+    NonceMismatch
+)
+from eth_account.messages import encode_defunct
+from eth_account import Account
 
 def clean_hex_input(hex_str: str) -> str:
     """Clean hex input by removing '0x' prefix and whitespace"""
@@ -90,3 +101,44 @@ def generate_ecdsa_keypair() -> dict:
         'private_key': private_key_hex,
         'public_key': public_key_hex
     }
+
+def verify_siwe_message(
+    message: str,
+    signature: str  # Single hex string in Ethereum format (0x + r + s + v)
+) -> dict:
+    """
+    Verify a Sign-In with Ethereum (SIWE) message signature.
+    
+    Args:
+        message (str): The SIWE message string
+        signature (str): The full Ethereum signature (hex string starting with 0x)
+    """
+    try:
+        # Parse the SIWE message
+        siwe_message = SiweMessage.from_message(message)
+        
+        # Verify with SIWE
+        siwe_message.verify(signature)
+        
+        return {
+            'verified': True,
+            'address': siwe_message.address,
+            'domain': siwe_message.domain,
+            'uri': siwe_message.uri,
+            'version': siwe_message.version,
+            'chain_id': siwe_message.chain_id,
+            'nonce': siwe_message.nonce,
+            'issued_at': siwe_message.issued_at,
+            'expiration_time': siwe_message.expiration_time,
+            'not_before': siwe_message.not_before,
+            'request_id': siwe_message.request_id,
+            'resources': siwe_message.resources,
+            'statement': siwe_message.statement
+        }
+        
+    except Exception as e:
+        return {
+            'verified': False,
+            'error': str(e)
+        }
+

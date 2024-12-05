@@ -18,8 +18,15 @@ import os
 import hashlib
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, utils
-from src.utils import derive_public_key_from_private
+from src.utils import derive_eth_address, derive_public_key_from_private
 import streamlit as st
+from eth_account.messages import encode_defunct
+from eth_account import Account
+from siwe import SiweMessage
+from datetime import datetime
+import time
+from pydantic import BaseModel
+from typing import Optional, List
 
 # Nillion ECDSA Configuration
 builtin_tecdsa_program_id = "builtin/tecdsa_sign"
@@ -29,6 +36,25 @@ tecdsa_signature_name = "tecdsa_signature"
 tecdsa_key_party = "tecdsa_key_party"
 tecdsa_digest_party = "tecdsa_digest_message_party"
 tecdsa_output_party = "tecdsa_output_party"
+
+class SimpleMessageParams(BaseModel):
+    """Parameters for creating a simple signed message"""
+    message: str
+
+class SiweMessageParams(BaseModel):
+    """Parameters for creating a Sign-In with Ethereum message"""
+    domain: str
+    ethereum_address: str
+    uri: Optional[str] = None
+    version: str = "1"
+    chain_id: int = 1
+    nonce: Optional[str] = None
+    issued_at: Optional[str] = None
+    expiration_time: Optional[str] = None
+    not_before: Optional[str] = None
+    request_id: Optional[str] = None
+    resources: Optional[List[str]] = None
+    statement: Optional[str] = None
 
 def get_nillion_network():
     """
@@ -86,6 +112,9 @@ async def store_ecdsa_key(ecdsa_private_key: str, ttl_days: int = 5, user_key_se
     # Derive public key
     public_key_hex = derive_public_key_from_private(ecdsa_private_key)
 
+    # Derive Ethereum address
+    ethereum_address = derive_eth_address(public_key_hex)
+
     # Only store the private key in Nillion
     secret_key = {
         builtin_tecdsa_private_key_name: EcdsaPrivateKey(private_bytes)
@@ -116,6 +145,7 @@ async def store_ecdsa_key(ecdsa_private_key: str, ttl_days: int = 5, user_key_se
     return {
         'store_id': store_id,
         'public_key': f"0x{public_key_hex}",
+        'ethereum_address': ethereum_address,
         'ttl_days': ttl_days,
         'program_id': builtin_tecdsa_program_id,
         'default_permissioned_user_id': str(client.user_id),
@@ -140,10 +170,14 @@ async def retrieve_ecdsa_key(store_id: str | UUID, secret_name: str = builtin_te
     
     # Derive public key
     public_key_hex = derive_public_key_from_private(private_key_hex)
+
+    # Derive Ethereum address
+    ethereum_address = derive_eth_address(public_key_hex)
     
     return {
         'private_key': private_key_hex,
-        'public_key': public_key_hex
+        'public_key': public_key_hex,
+        'ethereum_address': ethereum_address
     }
 
 async def get_user_id_from_seed(user_key_seed: str = "demo") -> str:
@@ -153,34 +187,59 @@ async def get_user_id_from_seed(user_key_seed: str = "demo") -> str:
     client = await VmClient.create(user_key, network, payer)
     return str(client.user_id)
 
-async def sign_message(message: bytes, store_id: str | UUID, user_key_seed: str = "demo") -> dict:
-    """Sign a message using a stored ECDSA private key in Nillion"""
+async def sign_message(
+    store_id_private_key: str | UUID,
+    message_params: SimpleMessageParams | SiweMessageParams,
+    user_key_seed: str
+) -> dict:
+    """
+    Signs a message using a private key stored in Nillion. Can create and sign either a simple message
+    or a structured SIWE (Sign-In with Ethereum) message.
+    """
     network, payer = get_nillion_network()
     user_key = user_key_from_seed(user_key_seed)
     client = await VmClient.create(user_key, network, payer)
 
-    if isinstance(store_id, str):
-        store_id = UUID(store_id)
+    if isinstance(store_id_private_key, str):
+        store_id_private_key = UUID(store_id_private_key)
+
+    if isinstance(message_params, SimpleMessageParams):
+        final_message = message_params.message
+    else:
+        # Create SIWE message
+        siwe_message = SiweMessage(
+            domain=message_params.domain,
+            address=message_params.ethereum_address,
+            uri=message_params.uri or f"https://{message_params.domain}",
+            version=message_params.version,
+            chain_id=message_params.chain_id,
+            nonce=message_params.nonce or hex(int(time.time() * 1000))[2:],
+            issued_at=message_params.issued_at or datetime.utcnow().isoformat(),
+            expiration_time=message_params.expiration_time,
+            not_before=message_params.not_before,
+            request_id=message_params.request_id,
+            resources=message_params.resources,
+            statement=message_params.statement
+        )
+        final_message = siwe_message.prepare_message()
 
     # Hash the message
-    digest = hashes.Hash(hashes.SHA256())
-    digest.update(message)
-    hashed_message = digest.finalize()
+    message_hashed = hashlib.sha256(final_message.encode()).digest()
     
-    # Store the message digest
-    digest_value = {
-        "tecdsa_digest_message": EcdsaDigestMessage(bytearray(hashed_message)),
+    # Store the message in Nillion
+    nillion_message_value = {
+        tecdsa_digest_name: EcdsaDigestMessage(bytearray(message_hashed)),
     }
     
-    # Set permissions for the digest
+    # Set permissions
     permissions = Permissions.defaults_for_user(client.user_id).allow_compute(
         client.user_id, builtin_tecdsa_program_id
     )
     
-    # Store the digest
-    digest_id = await client.store_values(
-        digest_value, 
-        ttl_days=1,  # Short TTL for the digest
+    # Store the message
+    store_id_message_to_sign = await client.store_values(
+        nillion_message_value, 
+        ttl_days=1,
         permissions=permissions
     ).invoke()
 
@@ -197,7 +256,7 @@ async def sign_message(message: bytes, store_id: str | UUID, user_key_seed: str 
         input_bindings,
         output_bindings,
         values={},
-        value_ids=[store_id, digest_id],
+        value_ids=[store_id_private_key, store_id_message_to_sign],
     ).invoke()
 
     # Get the signature
@@ -206,16 +265,14 @@ async def sign_message(message: bytes, store_id: str | UUID, user_key_seed: str 
     
     # Convert signature to standard format
     (r, s) = signature.value
-    r_int = int.from_bytes(r, byteorder="big")
-    s_int = int.from_bytes(s, byteorder="big")
     
     return {
-        'message': message.decode() if isinstance(message, bytes) else message,
-        'message_hash': hashed_message.hex(),
         'signature': {
-            'r': hex(r_int),
-            's': hex(s_int)
-        }
+            'r': hex(int.from_bytes(r, byteorder="big")),
+            's': hex(int.from_bytes(s, byteorder="big"))
+        },
+        'message': final_message,
+        'message_hash': message_hashed.hex()
     }
 
 def verify_signature(message_or_hash: str | bytes, signature: dict, public_key: str, is_hash: bool = False) -> dict:

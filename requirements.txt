@@ -8,3 +8,4 @@ nada-dsl
 python-dotenv==1.0.0
 betterproto==2.0.0b7
 beautifulsoup4
+siwe>=2.1.0
