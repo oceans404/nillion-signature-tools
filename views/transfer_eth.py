@@ -21,6 +21,11 @@ def render():
             value=st.secrets.get("nillion_default_from_address", ""),
             help="This is the ETH address corresponding to the private key stored in Nillion"
         )
+        
+        data = st.text_input(
+            "Message",
+            value="LFG 🚀",
+        )
 
         amount = st.slider(
             "Transfer amount (ETH)", 
@@ -29,11 +34,6 @@ def render():
             value=0.0001,
             step=0.0001,
             format="%.6f"
-        )
-        
-        data = st.text_input(
-            "Message",
-            value="LFG 🚀",
         )
         
     with col2:
@@ -51,7 +51,7 @@ def render():
         
         priority_fee = st.number_input(
             "Priority Fee (Gwei)",
-            value=2,
+            value=10,
             min_value=1
         )
 

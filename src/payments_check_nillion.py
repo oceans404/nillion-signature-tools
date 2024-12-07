@@ -104,7 +104,7 @@ async def send_transaction(
     block = make_rpc_call("eth_getBlockByNumber", ["latest", False])
     base_fee = int(block["baseFeePerGas"], 16)
     priority_fee = priority_fee_gwei * 10**9
-    max_fee = (2 * base_fee) + priority_fee
+    max_fee = (5 * base_fee) + priority_fee
 
     tx = {
         'nonce': nonce,
