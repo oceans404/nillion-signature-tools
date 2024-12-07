@@ -41,3 +41,5 @@ ENV/
 *.pem
 *.key
 *.crt 
+
+src/payments_check.py

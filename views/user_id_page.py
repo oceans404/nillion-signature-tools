@@ -13,8 +13,8 @@ def show():
     # Input field
     user_key_seed = st.text_input(
         "User Key Seed",
-        value="demo",
-        help="The seed used to generate your user key"
+        help="The seed used to generate your user key",
+        type="password"
     )
     
     if st.button("Get User ID"):

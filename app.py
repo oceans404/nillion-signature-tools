@@ -16,6 +16,7 @@ st.markdown("""
 - **[Retrieve Key from Nillion](/Retrieve_Key_from_Nillion)**: Retrieve your stored ECDSA private key from Nillion
 - **[Sign Message with Nillion](/Sign_Message_with_Nillion)**: Sign simple or [SIWE](https://login.xyz/) (EIP-4361) messages securely using Nillion's threshold ECDSA via your stored private key
 - **[Verify Signature](/Verify_Signature)**: Verify the authenticity of signed messages
+- **[Transfer ETH](/Transfer_ETH)**: Transfer ETH from the address corresponding to your stored private key to another address
 - **[Other Tools](/Other_Tools)**: Explore additional dev tools that help generate a Nillion user ID from a seed, derive Ethereum addresses, and derive public keys
 """)
 

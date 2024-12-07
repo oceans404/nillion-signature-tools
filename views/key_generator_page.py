@@ -16,7 +16,7 @@ def show():
         - Keep your private key secret - anyone with access can control your assets
         - For production use, generate keys in a secure, offline environment
     """)
-    
+
     if st.button("Generate a new key pair locally"):
         keypair = generate_ecdsa_keypair()
         details = format_key_details(keypair)

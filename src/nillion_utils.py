@@ -20,13 +20,12 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, utils
 from src.utils import derive_eth_address, derive_public_key_from_private
 import streamlit as st
-from eth_account.messages import encode_defunct
-from eth_account import Account
 from siwe import SiweMessage
 from datetime import datetime
 import time
 from pydantic import BaseModel
 from typing import Optional, List
+from web3 import Web3
 
 # Nillion ECDSA Configuration
 builtin_tecdsa_program_id = "builtin/tecdsa_sign"
@@ -55,6 +54,11 @@ class SiweMessageParams(BaseModel):
     request_id: Optional[str] = None
     resources: Optional[List[str]] = None
     statement: Optional[str] = None
+
+class TxMessageParams(BaseModel):
+    """Parameters for signing a transaction hash"""
+    tx_hash: bytes  # The transaction hash to sign as raw bytes
+    message: bytes  # The original message as raw bytes
 
 def get_nillion_network():
     """
@@ -189,7 +193,7 @@ async def get_user_id_from_seed(user_key_seed: str = "demo") -> str:
 
 async def sign_message(
     store_id_private_key: str | UUID,
-    message_params: SimpleMessageParams | SiweMessageParams,
+    message_params: SimpleMessageParams | SiweMessageParams | TxMessageParams,
     user_key_seed: str
 ) -> dict:
     """
@@ -205,6 +209,10 @@ async def sign_message(
 
     if isinstance(message_params, SimpleMessageParams):
         final_message = message_params.message
+        message_hashed = hashlib.sha256(final_message.encode()).digest()
+    elif isinstance(message_params, TxMessageParams):
+        final_message = message_params.message
+        message_hashed = message_params.tx_hash
     else:
         # Create SIWE message
         siwe_message = SiweMessage(
@@ -222,9 +230,7 @@ async def sign_message(
             statement=message_params.statement
         )
         final_message = siwe_message.prepare_message()
-
-    # Hash the message
-    message_hashed = hashlib.sha256(final_message.encode()).digest()
+        message_hashed = hashlib.sha256(final_message.encode()).digest()
     
     # Store the message in Nillion
     nillion_message_value = {
@@ -390,3 +396,38 @@ def verify_signature(message_or_hash: str | bytes, signature: dict, public_key: 
             'verified': False,
             'error': f"Unexpected error: {str(e)}"
         }
+
+async def sign_transaction(
+    tx_params: dict,
+    store_id_private_key: str,
+    user_key_seed: str
+) -> dict:
+    """Signs an Ethereum transaction using Nillion's secure signing"""
+    # Create Web3 instance
+    w3 = Web3()
+    
+    # Create the unsigned transaction hash using Web3's encoding
+    unsigned_tx = w3.eth.account._prepare_transaction(tx_params)
+    tx_hash = w3.keccak(unsigned_tx.encode())
+    
+    signed = await sign_message(
+        store_id_private_key=store_id_private_key,
+        message_params=SimpleMessageParams(message=tx_hash.hex()),
+        user_key_seed=user_key_seed
+    )
+    
+    # Create SignedTransaction using the signature components
+    r = int(signed['signature']['r'], 16)
+    s = int(signed['signature']['s'], 16)
+    v = 27  # Default v value for eth_sign
+    
+    # Encode the transaction with the signature
+    encoded_tx = w3.eth.account._encode_transaction(unsigned_tx, v, r, s)
+    
+    return {
+        'rawTransaction': Web3.to_hex(encoded_tx),
+        'hash': tx_hash.hex(),
+        'r': hex(r),
+        's': hex(s),
+        'v': v
+    }

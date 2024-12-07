@@ -7,6 +7,7 @@
 - **Retrieve Key from Nillion**: Retrieve your stored ECDSA private key from Nillion
 - **Sign Message with Nillion**: Sign simple or [SIWE](https://login.xyz/) (EIP-4361) messages securely using Nillion's threshold ECDSA via your stored private key
 - **Verify Signature**: Verify the authenticity of signed messages
+- **Transfer ETH**: Transfer ETH from the address corresponding to your stored private key to another address
 - **Other Tools**: Explore additional dev tools that help generate a Nillion user ID from a seed, derive Ethereum addresses, and derive public keys
 
 ## Setup

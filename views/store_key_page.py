@@ -31,8 +31,8 @@ def show():
     )
     
     user_key_seed = st.text_input(
-        "User Key Seed",
-        value="demo",
+        "Create a Password (User Key Seed)",
+        type="password",
         help="Seed used to generate your user key. This user will have default permissions to retrieve the key and sign with the key."
     )
 
@@ -117,9 +117,6 @@ def show():
                     - Store ID: The UUID where you can access your stored ECDSA private key in Nillion
                     - Public Key: The public key corresponds to your stored private key and is used to verify signatures
                 """)
-
-                st.text("User Key Seed")
-                st.code(user_key_seed)
                 
                 st.text("Store ID")
                 st.code(stored_details['store_id'])

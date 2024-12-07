@@ -22,7 +22,7 @@ SUPPORTED_CHAINS: Dict[str, Chain] = {
 def show():    
     # Get required store_id and user_key_seed inputs
     store_id = st.text_input("Store ID", help="The Nillion Store ID for the private key")
-    user_key_seed = st.text_input("User Key Seed", help="Seed for generating a user key with compute permissions")
+    user_key_seed = st.text_input("Password (User Key Seed)", help="Seed for generating a user key with compute permissions", type="password")
     
     # Create tabs for different message types
     tab1, tab2 = st.tabs(["Simple Message", "SIWE Message"])

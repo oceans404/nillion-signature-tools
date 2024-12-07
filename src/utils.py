@@ -1,16 +1,6 @@
 from eth_utils import keccak, to_checksum_address
 from cryptography.hazmat.primitives.asymmetric import ec
 from siwe import SiweMessage
-from siwe.siwe import (
-    ExpiredMessage,
-    InvalidSignature,
-    MalformedSession,
-    NotYetValidMessage,
-    DomainMismatch,
-    NonceMismatch
-)
-from eth_account.messages import encode_defunct
-from eth_account import Account
 
 def clean_hex_input(hex_str: str) -> str:
     """Clean hex input by removing '0x' prefix and whitespace"""

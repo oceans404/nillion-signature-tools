@@ -14,8 +14,8 @@ def show():
         """)
         
         user_key_seed = st.text_input(
-            "User Key Seed",
-            value="demo",
+            "Password (User Key Seed)",
+            type="password",
             help="The seed used to generate your user key",
             key="user_key_seed_input"  # Unique key to avoid conflicts
         )

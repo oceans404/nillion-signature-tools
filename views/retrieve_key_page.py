@@ -13,7 +13,8 @@ def show():
     )
     
     user_key_seed = st.text_input(
-        "User Key Seed",
+        "Password (User Key Seed)",
+        type="password",
         help="The seed used to generate your user key when storing the key"
     )
     
