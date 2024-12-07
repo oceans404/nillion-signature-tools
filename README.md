@@ -53,6 +53,8 @@ To connect to the Nillion testnet:
 
 2. Edit `.streamlit/secrets.toml` to add [a valid Nillion Network configuration](https://docs.nillion.com/network-configuration) and a funded Nilchain key
 
+Also add a Base Sepolia enabled Alchemy API Key to the file - alchemy_api_key
+
 ### Running the App
 
 Start the local streamlit app:

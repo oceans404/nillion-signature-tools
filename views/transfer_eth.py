@@ -22,11 +22,12 @@ def render():
             help="This is the ETH address corresponding to the private key stored in Nillion"
         )
 
-        amount = st.number_input(
+        amount = st.slider(
             "Transfer amount (ETH)", 
             min_value=0.0,
-            value=0.001,
-            step=0.001,
+            max_value=0.001,
+            value=0.0001,
+            step=0.0001,
             format="%.6f"
         )
         
@@ -39,7 +40,8 @@ def render():
         user_key_seed = st.text_input(
             "Password (User Key Seed)",
             value=st.secrets.get("nillion_default_user_key_seed", ""),
-            type="password"
+            type="password",
+            help="This seed is used to generate a user key/id that has been given permission to sign with the private key stored in Nillion"
         )
 
         to_address = st.text_input(
