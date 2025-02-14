@@ -109,6 +109,9 @@ async def store_ecdsa_key(ecdsa_private_key: str, ttl_days: int = 5, user_key_se
     network, payer = get_nillion_network()
     user_key = user_key_from_seed(user_key_seed)
     client = await VmClient.create(user_key, network, payer)
+    funds_amount = 5000000
+    print(f"💰  Adding some funds to the client balance: {funds_amount} uNIL")
+    await client.add_funds(funds_amount)
 
     # Convert private key to bytes
     private_bytes = bytearray(bytes.fromhex(ecdsa_private_key))
@@ -145,7 +148,7 @@ async def store_ecdsa_key(ecdsa_private_key: str, ttl_days: int = 5, user_key_se
         ttl_days=ttl_days, 
         permissions=permissions
     ).invoke()
-    
+
     return {
         'store_id': store_id,
         'public_key': f"0x{public_key_hex}",
@@ -162,6 +165,9 @@ async def retrieve_ecdsa_key(store_id: str | UUID, secret_name: str = builtin_te
     network, payer = get_nillion_network()
     user_key = user_key_from_seed(user_key_seed)
     client = await VmClient.create(user_key, network, payer)
+    funds_amount = 5000000
+    print(f"💰  Adding some funds to the client balance: {funds_amount} uNIL")
+    await client.add_funds(funds_amount)
 
     if isinstance(store_id, str):
         store_id = UUID(store_id)
@@ -189,6 +195,9 @@ async def get_user_id_from_seed(user_key_seed: str = "demo") -> str:
     network, payer = get_nillion_network()
     user_key = user_key_from_seed(user_key_seed)
     client = await VmClient.create(user_key, network, payer)
+    funds_amount = 5000000
+    print(f"💰  Adding some funds to the client balance: {funds_amount} uNIL")
+    await client.add_funds(funds_amount)
     return str(client.user_id)
 
 async def sign_message(
@@ -203,6 +212,9 @@ async def sign_message(
     network, payer = get_nillion_network()
     user_key = user_key_from_seed(user_key_seed)
     client = await VmClient.create(user_key, network, payer)
+    funds_amount = 5000000
+    print(f"💰  Adding some funds to the client balance: {funds_amount} uNIL")
+    await client.add_funds(funds_amount)
 
     if isinstance(store_id_private_key, str):
         store_id_private_key = UUID(store_id_private_key)
