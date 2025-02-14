@@ -109,7 +109,7 @@ async def store_ecdsa_key(ecdsa_private_key: str, ttl_days: int = 5, user_key_se
     network, payer = get_nillion_network()
     user_key = user_key_from_seed(user_key_seed)
     client = await VmClient.create(user_key, network, payer)
-    funds_amount = 5000000
+    funds_amount = 10000000
     print(f"💰  Adding some funds to the client balance: {funds_amount} uNIL")
     await client.add_funds(funds_amount)
 
@@ -165,7 +165,7 @@ async def retrieve_ecdsa_key(store_id: str | UUID, secret_name: str = builtin_te
     network, payer = get_nillion_network()
     user_key = user_key_from_seed(user_key_seed)
     client = await VmClient.create(user_key, network, payer)
-    funds_amount = 5000000
+    funds_amount = 10000000
     print(f"💰  Adding some funds to the client balance: {funds_amount} uNIL")
     await client.add_funds(funds_amount)
 
@@ -195,7 +195,7 @@ async def get_user_id_from_seed(user_key_seed: str = "demo") -> str:
     network, payer = get_nillion_network()
     user_key = user_key_from_seed(user_key_seed)
     client = await VmClient.create(user_key, network, payer)
-    funds_amount = 5000000
+    funds_amount = 10000000
     print(f"💰  Adding some funds to the client balance: {funds_amount} uNIL")
     await client.add_funds(funds_amount)
     return str(client.user_id)
@@ -212,7 +212,7 @@ async def sign_message(
     network, payer = get_nillion_network()
     user_key = user_key_from_seed(user_key_seed)
     client = await VmClient.create(user_key, network, payer)
-    funds_amount = 5000000
+    funds_amount = 10000000
     print(f"💰  Adding some funds to the client balance: {funds_amount} uNIL")
     await client.add_funds(funds_amount)
 
